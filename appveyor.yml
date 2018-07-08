@@ -9,10 +9,11 @@ environment:
     WITH_COMPILER: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_compiler.cmd"
 
   matrix:
-    # Python 2 install tooling is problematic for the windows version being tested
-    - PYTHON: "C:\\Python27"
-      PYTHON_VERSION: "2.7.13"
-      PYTHON_ARCH: "32"
+    # TODO: Fix?
+    # Python 2 install tooling is problematic for the windows setup being tested
+    # - PYTHON: "C:\\Python27"
+    #   PYTHON_VERSION: "2.7.13"
+    #   PYTHON_ARCH: "32"
 
     - PYTHON: "C:\\Python35"
       PYTHON_VERSION: "3.5.2"
@@ -22,15 +23,17 @@ environment:
       PYTHON_VERSION: "3.6.0"
       PYTHON_ARCH: "32"
 
-    - PYTHON: "C:\\Python37"
-      PYTHON_VERSION: "3.7.0"
-      PYTHON_ARCH: "32"
+    # Not available yet
+    # - PYTHON: "C:\\Python37"
+    #   PYTHON_VERSION: "3.7.0"
+    #   PYTHON_ARCH: "32"
 
-    # Python 2 install tooling is problematic for the windows version being tested
-    - PYTHON: "C:\\Python27-x64"
-      PYTHON_VERSION: "2.7.13"
-      PY2: "true"
-      PYTHON_ARCH: "64"
+    # TODO: Fix?
+    # Python 2 install tooling is problematic for the windows setup being tested
+    # - PYTHON: "C:\\Python27-x64"
+    #   PYTHON_VERSION: "2.7.13"
+    #   PY2: "true"
+    #   PYTHON_ARCH: "64"
 
     - PYTHON: "C:\\Python35-x64"
       PYTHON_VERSION: "3.5.2"
@@ -40,9 +43,10 @@ environment:
       PYTHON_VERSION: "3.6.0"
       PYTHON_ARCH: "64"
 
-    - PYTHON: "C:\\Python37-x64"
-      PYTHON_VERSION: "3.7.0"
-      PYTHON_ARCH: "64"
+    # Not available yet
+    # - PYTHON: "C:\\Python37-x64"
+    #   PYTHON_VERSION: "3.7.0"
+    #   PYTHON_ARCH: "64"
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
