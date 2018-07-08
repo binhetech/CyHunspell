@@ -11,42 +11,39 @@ environment:
   matrix:
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7.13"
-      PY2: "true"
       PYTHON_ARCH: "32"
+      USE_VS90: "true"
 
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4.4"
-      PY2: "false"
       PYTHON_ARCH: "32"
+      USE_VS140: "true"
 
     - PYTHON: "C:\\Python35"
       PYTHON_VERSION: "3.5.2"
-      PY2: "false"
       PYTHON_ARCH: "32"
 
     - PYTHON: "C:\\Python36"
       PYTHON_VERSION: "3.6.0"
-      PY2: "false"
       PYTHON_ARCH: "32"
 
     - PYTHON: "C:\\Python27-x64"
       PYTHON_VERSION: "2.7.13"
       PY2: "true"
       PYTHON_ARCH: "64"
+      USE_VS90: "true"
 
     - PYTHON: "C:\\Python34-x64"
       PYTHON_VERSION: "3.4.4"
-      PY2: "false"
       PYTHON_ARCH: "64"
+      USE_VS140: "true"
 
     - PYTHON: "C:\\Python35-x64"
       PYTHON_VERSION: "3.5.2"
-      PY2: "false"
       PYTHON_ARCH: "64"
 
     - PYTHON: "C:\\Python36-x64"
       PYTHON_VERSION: "3.6.0"
-      PY2: "false"
       PYTHON_ARCH: "64"
 
 init:
@@ -56,8 +53,8 @@ install:
   - "powershell appveyor\\install.ps1"
   - "set HOME=%APPVEYOR_BUILD_FOLDER%"
   - "%PYTHON%/python -m pip install -U pip"  # Upgrade pip
-  - 'IF "%PY2%"=="true" (SET VS100COMNTOOLS=%VS90COMNTOOLS%)'
-  - 'IF "%PY2%"=="false" (SET VS100COMNTOOLS=%VS140COMNTOOLS%)'
+  - 'IF "%USE_VS90%"=="true" (SET VS100COMNTOOLS="%VS90COMNTOOLS%")'
+  - 'IF "%USE_VS140%"=="false" (SET VS100COMNTOOLS="%VS140COMNTOOLS%")'
   # Install the depdencies (hunspell builds happen here)
   - "%PYTHON%/python setup.py install"
 
