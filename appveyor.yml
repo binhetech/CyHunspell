@@ -48,8 +48,6 @@ install:
   - "powershell appveyor\\install.ps1"
   - "set HOME=%APPVEYOR_BUILD_FOLDER%"
   - "%PYTHON%/python -m pip install -U pip"  # Upgrade pip
-  - ps: "ls dist"
-
   # Install the wheel to test it
   - "%PYTHON%/python setup.py install"
 
