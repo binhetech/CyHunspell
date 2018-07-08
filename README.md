@@ -1,4 +1,8 @@
 [![Build Status](https://travis-ci.org/MSeal/cython_hunspell.svg?branch=master)](https://travis-ci.org/MSeal/cython_hunspell)
+[![Build status](https://ci.appveyor.com/api/projects/status/vche84ngshvgergp/branch/master?svg=true)](https://ci.appveyor.com/project/MSeal/cython-hunspell/branch/master)
+[![PyPI version shields.io](https://img.shields.io/pypi/v/CyHunspell.svg)](https://pypi.python.org/pypi/CyHunspell/)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/CyHunspell.svg)](https://pypi.python.org/pypi/CyHunspell/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # CyHunspell
 Cython wrapper on Hunspell Dictionary
@@ -19,7 +23,7 @@ cacheman -- for (optionally asynchronous) persistent caching
 ## Non-Python Dependencies
 
 ### hunspell
-If you don't have hunspell installed the library will download it for you.
+If you don't have hunspell installed the library will download and build it for you.
 
 If you want to use ubuntu's 1.6 installation use the following before installing:
 
