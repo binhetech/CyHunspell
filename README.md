@@ -17,6 +17,14 @@ The hunspell library will cache any corrections, you can use persistent caching 
 adding the `use_disk_cache` argument to a Hunspell constructor. Otherwise it uses
 in-memory caching.
 
+## Installing
+
+For the simplest install simply run:
+
+    pip install cyhunspell
+
+This will attempt to install non-python depedencies on your behalf. You can speed this up by providing a libhunspell dependency ahead of time (see Non-Python Dependencies below).
+
 ## Dependencies
 cacheman -- for (optionally asynchronous) persistent caching
 
@@ -29,7 +37,7 @@ If you want to use ubuntu's 1.6 installation on ubuntu distributions use the fol
 
     sudo apt-get install libhunspell-1.6-0 libhunspell-dev
 
-This is a faster install than the built-in download and compile.
+This is a faster installsudo apt-get install libhunspell-1.6-0 libhunspell-dev than the built-in download and compile.
 
 Older versions of debian may only have 1.3.0 available, which you can install with
 
