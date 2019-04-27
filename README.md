@@ -25,11 +25,15 @@ cacheman -- for (optionally asynchronous) persistent caching
 ### hunspell
 If you don't have hunspell installed the library will download and build it for you.
 
-If you want to use ubuntu's 1.6 installation use the following before installing:
+If you want to use ubuntu's 1.6 installation on ubuntu distributions use the following before installing:
 
     sudo apt-get install libhunspell-1.6-0 libhunspell-dev
 
 This is a faster install than the built-in download and compile.
+
+Older versions of debian may only have 1.3.0 available, which you can install with
+
+    sudo apt-get install libhunspell-1.3-0 libhunspell-dev
 
 ## Features
 Spell checking & spell suggestions
