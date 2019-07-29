@@ -16,8 +16,11 @@ To release, run through the following:
 
     rm -rf dist
     # Update VERSION file with <next version>
+    # Update CHANGELOG.md
+    git commit -am "Updated version for release <next version>"
     git tag <next version>
     python setup.py sdist
     # Check the tar version matches expected release version
+    git push
     git push --tags
     twine upload dist/*

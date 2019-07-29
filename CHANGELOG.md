@@ -1,3 +1,8 @@
+# 1.3.1
+- Fixed dictionary loader to respect locales
+- Enabled long file paths to be loaded on windows
+- Fixed caching bug which caches results across hunspell instances with different dictionaries.
+
 # 1.3.0
 - Fixed build for python 3.7
 - Fixed library search issues (> Ubunutu 17)
