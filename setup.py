@@ -121,7 +121,7 @@ setup(
     ext_modules=ext_modules,
     install_requires=required,
     cmdclass={ 'build_ext': build_ext_compiler_check },
-    extra_requirements={
+    extras_require={
         'dev': required_dev,
         'test': required_test,
     },
