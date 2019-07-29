@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# This import fixes sys.path issues
-from . import parentpath
-
 import os
 import sys
 import shutil
