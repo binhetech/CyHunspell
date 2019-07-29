@@ -165,6 +165,9 @@ All unit tests for the repo.
 ## TODO
 * Convert cacheman dependency to be optional
 
+## Known Workarounds
+- On Windows very long file paths, or paths saved in a different encoding than the system require special handling by Hunspell to load dictionary files. To circumvent this on Windows setups, either set `system_encoding='UTF-8'` in the `Hunspell` constructor or set the environment variable `HUNSPELL_PATH_ENCODING=UTF-8`. Then you must re-encode your `hunspell_data_dir` in UTF-8 by passing that argument name to the `Hunspell` constructor or setting the `HUNSPELL_DATA` environment variable. This is a restriction of Hunspell / Windows operations.
+
 ## Known Issues
 - Exact spelling suggestions on different OS's differs slightly with identical inputs. This appears to be an issue with Hunspell 1.3 and not this library.
 - Older versions of pip and setuptools will build with incorrect windows DLL bindings and complain about "ImportError: DLL load failed: %1 is not a valid Win32 application."

@@ -3,6 +3,7 @@ from .platform import detect_cpus
 from cacheman.cachewrap import NonPersistentCache
 from cacheman.cacher import get_cache_manager
 from cacheman.autosync import TimeCount, AutoSyncCache
+from locale import getpreferredencoding
 
 from libc.stdlib cimport *
 from libc.string cimport *
@@ -12,6 +13,11 @@ from cython.operator cimport dereference as deref
 # Use full path for cimport ONLY!
 from hunspell.thread cimport *
 
+class HunspellFilePathError(IOError):
+    pass
+
+WIN32_LONG_PATH_PREFIX = "\\\\?\\"
+
 def valid_encoding(basestring encoding):
     try:
         "".encode(encoding, 'strict')
@@ -19,13 +25,13 @@ def valid_encoding(basestring encoding):
     except LookupError:
         return 'ascii'
 
-cdef int copy_to_c_string(basestring py_string, char **holder, basestring encoding='UTF-8') except -1:
+cdef int copy_to_c_string(basestring py_string, char **holder, basestring encoding) except -1:
     if isinstance(py_string, bytes):
         return byte_to_c_string(<bytes>py_string, holder, encoding)
     else:
         return byte_to_c_string(<bytes>py_string.encode(encoding, 'strict'), holder, encoding)
 
-cdef int byte_to_c_string(bytes py_byte_string, char **holder, basestring encoding='UTF-8') except -1:
+cdef int byte_to_c_string(bytes py_byte_string, char **holder, basestring encoding) except -1:
     cdef size_t str_len = len(py_byte_string)
     cdef char *c_raw_string = py_byte_string
     holder[0] = <char *>malloc((str_len + 1) * sizeof(char)) # deref doesn't support left-hand assignment
@@ -35,7 +41,7 @@ cdef int byte_to_c_string(bytes py_byte_string, char **holder, basestring encodi
     holder[0][str_len] = 0
     return str_len
 
-cdef unicode c_string_to_unicode_no_except(char* s, basestring encoding='UTF-8'):
+cdef unicode c_string_to_unicode_no_except(char* s, basestring encoding):
     # Convert c_string to python unicode
     try:
         return s.decode(encoding, 'strict')
@@ -86,10 +92,17 @@ cdef class HunspellWrap(object):
     cdef public basestring _cache_manager_name
     cdef public basestring _hunspell_dir
     cdef public basestring _dic_encoding
+    cdef public basestring _system_encoding
     cdef public object _suggest_cache
     cdef public object _stem_cache
     cdef char *affpath
     cdef char *dpath
+
+    cdef basestring prefix_win_utf8_hunspell_path(self, basestring path):
+        if os.name == 'nt' and self._system_encoding.lower().replace('-', '') == 'utf8':
+            return WIN32_LONG_PATH_PREFIX + path
+        else:
+            return path
 
     cdef Hunspell *_create_hspell_inst(self, basestring lang) except *:
         # C-realm Create Hunspell Instance
@@ -105,10 +118,26 @@ cdef class HunspellWrap(object):
         pydpath = os.path.join(self._hunspell_dir, '{}.dic'.format(lang))
         for fpath in (pyaffpath, pydpath):
             if not os.path.isfile(fpath) or not os.access(fpath, os.R_OK):
-                raise IOError("File '{}' not found or accessible".format(fpath))
+                raise HunspellFilePathError("File '{}' not found or accessible".format(fpath))
 
-        copy_to_c_string(pyaffpath, &self.affpath)
-        copy_to_c_string(pydpath, &self.dpath)
+        next_str = pyaffpath
+        try:
+            copy_to_c_string(
+                self.prefix_win_utf8_hunspell_path(pyaffpath),
+                &self.affpath,
+                self._system_encoding
+            )
+            next_str = pydpath
+            copy_to_c_string(
+                self.prefix_win_utf8_hunspell_path(pydpath),
+                &self.dpath,
+                self._system_encoding
+            )
+        except UnicodeEncodeError as e:
+            raise HunspellFilePathError(
+                "File path ('{path}') encoding did not match locale encoding ('{enc}'): {err}".format(
+                    path=next_str, enc=self._system_encoding, err=str(e))
+            )
         holder = new Hunspell(self.affpath, self.dpath)
         if holder is NULL:
             raise MemoryError()
@@ -116,17 +145,24 @@ cdef class HunspellWrap(object):
         return holder
 
     def __init__(self, basestring lang='en_US', basestring cache_manager="hunspell",
-            basestring disk_cache_dir=None, basestring hunspell_data_dir=None):
+            basestring disk_cache_dir=None, basestring hunspell_data_dir=None,
+            basestring system_encoding=None):
         # TODO - make these LRU caches so that you don't destroy your memory!
         if hunspell_data_dir is None:
             hunspell_data_dir = os.environ.get("HUNSPELL_DATA")
         if hunspell_data_dir is None:
             hunspell_data_dir = os.path.join(os.path.dirname(__file__), '..', 'dictionaries')
+        if system_encoding is None:
+            system_encoding = os.environ.get("HUNSPELL_PATH_ENCODING")
+        if system_encoding is None:
+            system_encoding = getpreferredencoding()
         self._hunspell_dir = os.path.abspath(hunspell_data_dir)
+        self._system_encoding = system_encoding
 
         self.lang = lang
         self._cxx_hunspell = self._create_hspell_inst(lang)
-        self._dic_encoding = valid_encoding(c_string_to_unicode_no_except(self._cxx_hunspell.get_dic_encoding()))
+        # csutil.hxx defines the encoding for this value as #define SPELL_ENCODING "ISO8859-1"
+        self._dic_encoding = valid_encoding(c_string_to_unicode_no_except(self._cxx_hunspell.get_dic_encoding(), 'ISO8859-1'))
         self.max_threads = detect_cpus()
 
         self._cache_manager_name = cache_manager

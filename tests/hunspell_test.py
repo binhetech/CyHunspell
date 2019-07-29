@@ -4,10 +4,52 @@
 from . import parentpath
 
 import os
+import sys
+import shutil
+import tempfile
 import unittest
-from hunspell import Hunspell
+
+if sys.version_info >= (3, 0):
+    from unittest.mock import patch
+    from io import StringIO
+else:
+    from mock import patch
+    from StringIO import StringIO
+
+from contextlib import contextmanager
+from hunspell import Hunspell, HunspellFilePathError
 
 DICT_DIR = os.path.join(os.path.dirname(__file__), '..', 'dictionaries')
+
+@contextmanager
+def captured_c_stderr_file():
+    '''
+    Handles flipping the stderr file descriptor to a temp file and back.
+    This is the only way to capture stderr messages sent by Hunspell.
+
+    Yields: path to the captured stderr file
+    '''
+    old_err = sys.stderr
+    try:
+        sys.stderr.flush()
+        new_err = os.dup(2) # Clone the err file handler
+
+        # Can't use tempdir context because os.dup2 needs a filename
+        temp_dir = tempfile.mkdtemp()
+        temp_name = os.path.join(temp_dir, 'errcap')
+        with open(temp_name, 'a'):
+            os.utime(temp_name, None)
+        temp_file = os.open(temp_name, os.O_WRONLY)
+        os.dup2(temp_file, 2)
+        os.close(temp_file)
+        sys.stderr = os.fdopen(new_err, 'w')
+        yield temp_name
+    finally:
+        try:
+            shutil.rmtree(temp_dir) # Nuke temp content
+        finally:
+            sys.stderr = old_err # Reset back
+            os.dup2(sys.stderr.fileno(), 2)
 
 class HunspellTest(unittest.TestCase):
     def setUp(self):
@@ -27,8 +69,25 @@ class HunspellTest(unittest.TestCase):
         del self.h
 
     def test_missing_dict(self):
-        with self.assertRaises(IOError):
+        with self.assertRaises(HunspellFilePathError):
             Hunspell('not_avail', hunspell_data_dir=DICT_DIR)
+
+    @patch('os.path.isfile', return_value=True)
+    @patch('os.access', return_value=True)
+    def test_bad_path_encoding(self, *mocks):
+        with self.assertRaises(HunspellFilePathError):
+            Hunspell('not_checked',
+                hunspell_data_dir='bad/\udcc3/decoding')
+
+    @patch('hunspell.hunspell.WIN32_LONG_PATH_PREFIX', '/not/valid')
+    def test_windows_utf_8_encoding_applies_prefix(self, *mocks):
+        with captured_c_stderr_file() as caperr:
+            with patch("os.name", 'nt'):
+                # If python file existance checks used prefix, this would raise a HunspellFilePathError
+                Hunspell(system_encoding='UTF-8')
+            with open(caperr, 'r') as err:
+                # But the Hunspell library lookup had the prefix applied, which is needs
+                self.assertIn('error: /not/valid/', err.read())
 
     def test_spell(self):
         self.assertFalse(self.h.spell('dpg'))
