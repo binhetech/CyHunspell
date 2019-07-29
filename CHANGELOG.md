@@ -1,4 +1,4 @@
-# 1.3.1
+# 1.3.1 -> 1.3.2
 - Fixed dictionary loader to respect locales
 - Enabled long file paths to be loaded on windows
 - Fixed caching bug which caches results across hunspell instances with different dictionaries.
