@@ -6,7 +6,7 @@ matrix:
       python: 2.7
     - os: osx
       python: 2.7
-      env: PYENV_VERSION=2.7
+      env: PYENV_VERSION=2.7.16
       sudo: required
       language: generic
     - os: linux

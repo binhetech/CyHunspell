@@ -7,9 +7,11 @@ import tempfile
 import unittest
 
 if sys.version_info >= (3, 0):
+    PY3 = True
     from unittest.mock import patch
     from io import StringIO
 else:
+    PY3 = False
     from mock import patch
     from StringIO import StringIO
 
@@ -18,6 +20,7 @@ from cacheman.cacher import get_cache_manager
 from hunspell import Hunspell, HunspellFilePathError
 
 DICT_DIR = os.path.join(os.path.dirname(__file__), '..', 'dictionaries')
+
 
 @contextmanager
 def captured_c_stderr_file():
@@ -30,7 +33,7 @@ def captured_c_stderr_file():
     old_err = sys.stderr
     try:
         sys.stderr.flush()
-        new_err = os.dup(2) # Clone the err file handler
+        new_err = os.dup(sys.stderr.fileno()) # Clone the err file handler
 
         # Can't use tempdir context because os.dup2 needs a filename
         temp_dir = tempfile.mkdtemp()
@@ -44,12 +47,23 @@ def captured_c_stderr_file():
         yield temp_name
     finally:
         try:
+            try:
+                os.close(temp_file)
+            except:
+                pass
             shutil.rmtree(temp_dir) # Nuke temp content
-        finally:
-            sys.stderr = old_err # Reset back
-            os.dup2(sys.stderr.fileno(), 2)
+        except:
+            pass
+        sys.stderr = old_err # Reset back
+        os.dup2(sys.stderr.fileno(), 2)
 
 class HunspellTest(unittest.TestCase):
+    def assertRegexpSearch(self, *args, **kwargs):
+        if PY3:
+            self.assertRegex(*args, **kwargs)
+        else:
+            self.assertRegexpMatches(*args, **kwargs)
+
     def setUp(self):
         self.h = Hunspell('test', hunspell_data_dir=DICT_DIR)
 
@@ -73,9 +87,17 @@ class HunspellTest(unittest.TestCase):
     @patch('os.path.isfile', return_value=True)
     @patch('os.access', return_value=True)
     def test_bad_path_encoding(self, *mocks):
-        with self.assertRaises(HunspellFilePathError):
-            Hunspell('not_checked',
-                hunspell_data_dir='bad/\udcc3/decoding')
+        if PY3:
+            with self.assertRaises(HunspellFilePathError):
+                Hunspell('not_checked',
+                    hunspell_data_dir=u'bad/\udcc3/decoding')
+        else:
+            # Python 2 just make an illegal string instead of raising
+            with captured_c_stderr_file() as caperr:
+                Hunspell('not_checked',
+                    hunspell_data_dir=u'bad/\udcc3/decoding')
+                with open(caperr, 'r') as err:
+                    self.assertRegexpSearch(err.read(), r'error:[^\n]*bad/[^\n]*/decoding')
 
     @patch('hunspell.hunspell.WIN32_LONG_PATH_PREFIX', '/not/valid')
     def test_windows_utf_8_encoding_applies_prefix(self, *mocks):
@@ -84,8 +106,8 @@ class HunspellTest(unittest.TestCase):
                 # If python file existance checks used prefix, this would raise a HunspellFilePathError
                 Hunspell('test', system_encoding='UTF-8')
             with open(caperr, 'r') as err:
-                # But the Hunspell library lookup had the prefix applied, which is needs
-                self.assertIn('error: /not/valid/', err.read())
+                # But the Hunspell library lookup had the prefix applied
+                self.assertRegexpSearch(err.read(), r'error:[^\n]*/not/valid[^\n]*')
 
     def test_spell(self):
         self.assertFalse(self.h.spell('dpg'))
