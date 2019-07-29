@@ -1,4 +1,6 @@
 import os
+import sys
+import hashlib
 from .platform import detect_cpus
 from cacheman.cachewrap import NonPersistentCache
 from cacheman.cacher import get_cache_manager
@@ -24,6 +26,13 @@ def valid_encoding(basestring encoding):
         return encoding
     except LookupError:
         return 'ascii'
+
+def md5(basestring input):
+    # Yeah, this could be done at compile time, but it's tedious to implement
+    if sys.version_info >= (3, 0):
+        return hashlib.md5("whatever your string is".encode('utf-8')).hexdigest()
+    else:
+        return hashlib.md5("whatever your string is").hexdigest()
 
 cdef int copy_to_c_string(basestring py_string, char **holder, basestring encoding) except -1:
     if isinstance(py_string, bytes):
@@ -169,20 +178,28 @@ cdef class HunspellWrap(object):
         manager = get_cache_manager(self._cache_manager_name)
         if disk_cache_dir:
             manager.cache_directory = disk_cache_dir
-        if not manager.cache_registered("hunspell_suggest"):
+
+        suggest_cache_name = "hunspell_suggest_{lang}_{hash}".format(
+            lang=lang, hash=md5(self._hunspell_dir))
+        stem_cache_name = "hunspell_stem_{lang}_{hash}".format(
+            lang=lang, hash=md5(self._hunspell_dir))
+
+        if not manager.cache_registered(suggest_cache_name):
             if disk_cache_dir:
                 custom_time_checks = [TimeCount(60, 1000000), TimeCount(300, 10000), TimeCount(900, 1)]
-                AutoSyncCache("hunspell_suggest", cache_manager=manager, time_checks=custom_time_checks)
+                AutoSyncCache(suggest_cache_name, cache_manager=manager, time_checks=custom_time_checks)
             else:
-                NonPersistentCache("hunspell_suggest", cache_manager=manager)
-        if not manager.cache_registered("hunspell_stem"):
+                NonPersistentCache(suggest_cache_name, cache_manager=manager)
+
+        if not manager.cache_registered(stem_cache_name):
             if disk_cache_dir:
                 custom_time_checks = [TimeCount(60, 1000000), TimeCount(300, 10000), TimeCount(900, 1)]
-                AutoSyncCache("hunspell_stem", cache_manager=manager, time_checks=custom_time_checks)
+                AutoSyncCache(stem_cache_name, cache_manager=manager, time_checks=custom_time_checks)
             else:
-                NonPersistentCache("hunspell_stem", cache_manager=manager)
-        self._suggest_cache = manager.retrieve_cache("hunspell_suggest")
-        self._stem_cache = manager.retrieve_cache("hunspell_stem")
+                NonPersistentCache(stem_cache_name, cache_manager=manager)
+
+        self._suggest_cache = manager.retrieve_cache(suggest_cache_name)
+        self._stem_cache = manager.retrieve_cache(stem_cache_name)
 
     def __dealloc__(self):
         del self._cxx_hunspell
@@ -269,9 +286,13 @@ cdef class HunspellWrap(object):
 
         return ret_dict
 
-
     def save_cache(self):
-        get_cache_manager(self._cache_manager_name).save_all_cache_contents()
+        self._suggest_cache.save()
+        self._stem_cache.save()
+
+    def clear_cache(self):
+        self._suggest_cache.clear()
+        self._stem_cache.clear()
 
     def set_concurrency(self, max_threads):
         self.max_threads = max_threads

@@ -17,6 +17,7 @@ else:
     from StringIO import StringIO
 
 from contextlib import contextmanager
+from cacheman.cacher import get_cache_manager
 from hunspell import Hunspell, HunspellFilePathError
 
 DICT_DIR = os.path.join(os.path.dirname(__file__), '..', 'dictionaries')
@@ -84,7 +85,7 @@ class HunspellTest(unittest.TestCase):
         with captured_c_stderr_file() as caperr:
             with patch("os.name", 'nt'):
                 # If python file existance checks used prefix, this would raise a HunspellFilePathError
-                Hunspell(system_encoding='UTF-8')
+                Hunspell('test', system_encoding='UTF-8')
             with open(caperr, 'r') as err:
                 # But the Hunspell library lookup had the prefix applied, which is needs
                 self.assertIn('error: /not/valid/', err.read())
@@ -147,6 +148,118 @@ class HunspellTest(unittest.TestCase):
             'twigs': ('twig',),
             'dog': ('dog',)
         })
+
+    def test_non_overlapping_caches(self):
+        test_suggest = self.h.suggest('testing')
+        test_stem = self.h.stem('testing')
+
+        self.h._suggest_cache['made-up'] = test_suggest
+        self.assertEqual(self.h.suggest('made-up'), test_suggest)
+        self.h._stem_cache['made-up'] = test_stem
+        self.assertEqual(self.h.stem('made-up'), test_stem)
+
+        h2 = Hunspell('en_US', hunspell_data_dir=DICT_DIR)
+        self.assertNotEqual(h2.suggest('made-up'), test_suggest)
+        self.assertNotEqual(h2.stem('made-up'), test_stem)
+
+    def test_overlapping_caches(self):
+        test_suggest = self.h.suggest('testing')
+        test_stem = self.h.stem('testing')
+
+        self.h._suggest_cache['made-up'] = test_suggest
+        self.assertEqual(self.h.suggest('made-up'), test_suggest)
+        self.h._stem_cache['made-up'] = test_stem
+        self.assertEqual(self.h.stem('made-up'), test_stem)
+
+        del self.h
+        self.h = Hunspell('test', hunspell_data_dir=DICT_DIR)
+        self.assertEqual(self.h.suggest('made-up'), test_suggest)
+        self.assertEqual(self.h.stem('made-up'), test_stem)
+
+    def test_save_caches_persistance(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            h1 = Hunspell('test',
+                hunspell_data_dir=DICT_DIR,
+                disk_cache_dir=temp_dir,
+                cache_manager='disk_hun')
+            test_suggest = h1.suggest('testing')
+            test_stem = h1.stem('testing')
+
+            h1._suggest_cache['made-up'] = test_suggest
+            self.assertEqual(h1.suggest('made-up'), test_suggest)
+            h1._stem_cache['made-up'] = test_stem
+            self.assertEqual(h1.stem('made-up'), test_stem)
+
+            h1.save_cache()
+            del h1
+
+            cacheman = get_cache_manager('disk_hun')
+            cacheman.deregister_all_caches()
+            self.assertEqual(len(cacheman.cache_by_name), 0)
+
+            h2 = Hunspell('test',
+                hunspell_data_dir=DICT_DIR,
+                disk_cache_dir=temp_dir,
+                cache_manager='disk_hun')
+
+            self.assertNotEqual(len(h2._suggest_cache), 0)
+            self.assertNotEqual(len(h2._stem_cache), 0)
+            self.assertEqual(h2.suggest('made-up'), test_suggest)
+            self.assertEqual(h2.stem('made-up'), test_stem)
+        finally:
+            shutil.rmtree(temp_dir) # Nuke temp content
+
+    def test_clear_caches_persistance(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            h1 = Hunspell('test',
+                hunspell_data_dir=DICT_DIR,
+                disk_cache_dir=temp_dir,
+                cache_manager='disk_hun')
+            test_suggest = h1.suggest('testing')
+            test_stem = h1.stem('testing')
+
+            h1._suggest_cache['made-up'] = test_suggest
+            self.assertEqual(h1.suggest('made-up'), test_suggest)
+            h1._stem_cache['made-up'] = test_stem
+            self.assertEqual(h1.stem('made-up'), test_stem)
+
+            h1.save_cache()
+            h1.clear_cache()
+            del h1
+
+            cacheman = get_cache_manager('disk_hun')
+            cacheman.deregister_all_caches()
+            self.assertEqual(len(cacheman.cache_by_name), 0)
+
+            h2 = Hunspell('test',
+                hunspell_data_dir=DICT_DIR,
+                disk_cache_dir=temp_dir,
+                cache_manager='disk_hun')
+
+            self.assertEqual(len(h2._suggest_cache), 0)
+            self.assertEqual(len(h2._stem_cache), 0)
+            self.assertNotEqual(h2.suggest('made-up'), test_suggest)
+            self.assertNotEqual(h2.stem('made-up'), test_stem)
+        finally:
+            shutil.rmtree(temp_dir) # Nuke temp content
+
+    def test_clear_caches_non_peristance(self):
+        test_suggest = self.h.suggest('testing')
+        test_stem = self.h.stem('testing')
+
+        self.h._suggest_cache['made-up'] = test_suggest
+        self.assertEqual(self.h.suggest('made-up'), test_suggest)
+        self.h._stem_cache['made-up'] = test_stem
+        self.assertEqual(self.h.stem('made-up'), test_stem)
+
+        self.h.clear_cache()
+
+        del self.h
+        self.h = Hunspell('test', hunspell_data_dir=DICT_DIR)
+        self.assertNotEqual(self.h.suggest('made-up'), test_suggest)
+        self.assertNotEqual(self.h.stem('made-up'), test_stem)
 
 if __name__ == '__main__':
     unittest.main()
