@@ -68,6 +68,8 @@ datatypes = ['*.aff', '*.dic', '*.pxd', '*.pyx', '*.pyd', '*.pxd', '*.so', '*.li
 packages = find_packages(exclude=['*.tests', '*.tests.*', 'tests.*', 'tests'])
 packages.extend(['dictionaries', 'libs.msvc'])
 required = [req.strip() for req in read('requirements.txt').splitlines() if req.strip()]
+required_dev = [req.strip() for req in read('requirements-dev.txt').splitlines() if req.strip()]
+required_test = [req.strip() for req in read('requirements-dev.txt').splitlines() if req.strip()]
 package_data = {'' : datatypes}
 hunspell_config = pkgconfig('hunspell', language='c++')
 
@@ -120,8 +122,8 @@ setup(
     install_requires=required,
     cmdclass={ 'build_ext': build_ext_compiler_check },
     extra_requirements = {
-        'dev': ['cython']
-        'test': ['pytest']
+        'dev': required_dev,
+        'test': required_test,
     },
     license='MIT + MPL 1.1/GPL 2.0/LGPL 2.1',
     packages=packages,
