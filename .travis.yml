@@ -63,7 +63,7 @@ before_install:
   - if [[ "$SKIP_DOWNLOAD" == "true" ]]; then sudo apt-get install libhunspell-1.3-0 libhunspell-dev; fi
   # For debug purposes
   - python --version
-install: "pip install .[test]"
+install: "python setup.py install && pip install -r requirements-test.txt"
 script: "pytest"
 
 notifications:

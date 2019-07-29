@@ -56,7 +56,8 @@ install:
   - "set HOME=%APPVEYOR_BUILD_FOLDER%"
   - "%PYTHON%/python -m pip install -U pip"  # Upgrade pip
   # Install the depdencies (hunspell builds happen here)
-  - "%PYTHON%/pip install .[test]"
+  - "%PYTHON%/python setup.py install"
+  - "%PYTHON%/python -m pip install -r requirements-test.txt"
 
 # Appveyor's build step is specific to .NET projects, so we build in the
 # install step instead.

@@ -69,7 +69,7 @@ packages = find_packages(exclude=['*.tests', '*.tests.*', 'tests.*', 'tests'])
 packages.extend(['dictionaries', 'libs.msvc'])
 required = [req.strip() for req in read('requirements.txt').splitlines() if req.strip()]
 required_dev = [req.strip() for req in read('requirements-dev.txt').splitlines() if req.strip()]
-required_test = [req.strip() for req in read('requirements-dev.txt').splitlines() if req.strip()]
+required_test = [req.strip() for req in read('requirements-test.txt').splitlines() if req.strip()]
 package_data = {'' : datatypes}
 hunspell_config = pkgconfig('hunspell', language='c++')
 
@@ -82,7 +82,7 @@ if building:
     ext_modules = cythonize([
         Extension(
             'hunspell.hunspell',
-            [os.path.join('hunspell', 'hunspell.pyx')],
+            [os.path.join(BASE_DIR, 'hunspell', 'hunspell.pyx')],
             **hunspell_config
         )
     ], force=force_rebuild)
@@ -91,7 +91,7 @@ else:
     ext_modules = [
         Extension(
             'hunspell.hunspell',
-            [os.path.join('hunspell', 'hunspell.cpp')],
+            [os.path.join(BASE_DIR, 'hunspell', 'hunspell.cpp')],
             **hunspell_config
         )
     ]
