@@ -17,16 +17,26 @@ The hunspell library will cache any corrections, you can use persistent caching 
 adding the `use_disk_cache` argument to a Hunspell constructor. Otherwise it uses
 in-memory caching.
 
+## Update history
++ 2019.09.18: add some head files from origin hunspell(C++) in order to install using setup.py
+
 ## Installing
 
-+ recommend method： use setup.py
++ recommended method： 
+
+In order to install more efficiently, using setup.py to install is recommended, and pkg-config is needed.
 ```
+# clone repository
+git clone https://github.com/binhetech/CyHunspell.git CyHunspell
+
+# enter into working directory
 cd CyHunspell
 
-python3 setup.py install
+# install using setup
+python setup.py install
 ```
 
-+ origin method:
++ origin pip method:
 
 
 For the simplest install simply run:

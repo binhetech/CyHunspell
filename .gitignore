@@ -54,7 +54,6 @@ coverage.xml
 docs/_build/
 
 # Downloaded content
-external
 libs/gcc
 libs/unix
 libs/tmp
