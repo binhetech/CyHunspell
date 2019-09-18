@@ -19,6 +19,16 @@ in-memory caching.
 
 ## Installing
 
++ recommend method： use setup.py
+```
+cd CyHunspell
+
+python3 setup.py install
+```
+
++ origin method:
+
+
 For the simplest install simply run:
 
     pip install cyhunspell

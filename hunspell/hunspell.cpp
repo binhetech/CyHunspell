@@ -630,7 +630,7 @@ static CYTHON_INLINE float __PYX_NAN() {
 #define __PYX_HAVE__hunspell__hunspell
 #define __PYX_HAVE_API__hunspell__hunspell
 /* Early includes */
-#include "hunspell/hunspell.hxx"
+#include "hunspell.hxx"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
