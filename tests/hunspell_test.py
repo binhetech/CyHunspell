@@ -122,19 +122,19 @@ class HunspellTest(unittest.TestCase):
 
     def test_suggest(self):
         required = ('dog', 'pg', 'deg', 'dig', 'dpt', 'dug', 'mpg', 'd pg')
-        suggest = self.h.suggest('dpg')
+        suggest = self.h._suggest('dpg')
         self.assertIsInstance(suggest, tuple)
         self.assertAllIn(required, suggest)
 
     def test_suggest_utf8(self):
         required = (u'café', u'Cerf')
         for variant in ('cefé', u'cefé'):
-            suggest = self.h.suggest(variant)
+            suggest = self.h._suggest(variant)
             self.assertIsInstance(suggest, tuple)
             self.assertAllIn(required, suggest)
 
     def test_suggest_empty(self):
-        self.assertEqual(self.h.suggest(''), ())
+        self.assertEqual(self.h._suggest(''), ())
 
     def test_stem(self):
         self.assertEqual(self.h.stem('dog'), ('dog',))
@@ -169,30 +169,30 @@ class HunspellTest(unittest.TestCase):
         })
 
     def test_non_overlapping_caches(self):
-        test_suggest = self.h.suggest('testing')
+        test_suggest = self.h._suggest('testing')
         test_stem = self.h.stem('testing')
 
         self.h._suggest_cache['made-up'] = test_suggest
-        self.assertEqual(self.h.suggest('made-up'), test_suggest)
+        self.assertEqual(self.h._suggest('made-up'), test_suggest)
         self.h._stem_cache['made-up'] = test_stem
         self.assertEqual(self.h.stem('made-up'), test_stem)
 
         h2 = Hunspell('en_US', hunspell_data_dir=DICT_DIR)
-        self.assertNotEqual(h2.suggest('made-up'), test_suggest)
+        self.assertNotEqual(h2._suggest('made-up'), test_suggest)
         self.assertNotEqual(h2.stem('made-up'), test_stem)
 
     def test_overlapping_caches(self):
-        test_suggest = self.h.suggest('testing')
+        test_suggest = self.h._suggest('testing')
         test_stem = self.h.stem('testing')
 
         self.h._suggest_cache['made-up'] = test_suggest
-        self.assertEqual(self.h.suggest('made-up'), test_suggest)
+        self.assertEqual(self.h._suggest('made-up'), test_suggest)
         self.h._stem_cache['made-up'] = test_stem
         self.assertEqual(self.h.stem('made-up'), test_stem)
 
         del self.h
         self.h = Hunspell('test', hunspell_data_dir=DICT_DIR)
-        self.assertEqual(self.h.suggest('made-up'), test_suggest)
+        self.assertEqual(self.h._suggest('made-up'), test_suggest)
         self.assertEqual(self.h.stem('made-up'), test_stem)
 
     def test_save_caches_persistance(self):
@@ -202,11 +202,11 @@ class HunspellTest(unittest.TestCase):
                 hunspell_data_dir=DICT_DIR,
                 disk_cache_dir=temp_dir,
                 cache_manager='disk_hun')
-            test_suggest = h1.suggest('testing')
+            test_suggest = h1._suggest('testing')
             test_stem = h1.stem('testing')
 
             h1._suggest_cache['made-up'] = test_suggest
-            self.assertEqual(h1.suggest('made-up'), test_suggest)
+            self.assertEqual(h1._suggest('made-up'), test_suggest)
             h1._stem_cache['made-up'] = test_stem
             self.assertEqual(h1.stem('made-up'), test_stem)
 
@@ -224,7 +224,7 @@ class HunspellTest(unittest.TestCase):
 
             self.assertNotEqual(len(h2._suggest_cache), 0)
             self.assertNotEqual(len(h2._stem_cache), 0)
-            self.assertEqual(h2.suggest('made-up'), test_suggest)
+            self.assertEqual(h2._suggest('made-up'), test_suggest)
             self.assertEqual(h2.stem('made-up'), test_stem)
         finally:
             shutil.rmtree(temp_dir) # Nuke temp content
@@ -236,11 +236,11 @@ class HunspellTest(unittest.TestCase):
                 hunspell_data_dir=DICT_DIR,
                 disk_cache_dir=temp_dir,
                 cache_manager='disk_hun')
-            test_suggest = h1.suggest('testing')
+            test_suggest = h1._suggest('testing')
             test_stem = h1.stem('testing')
 
             h1._suggest_cache['made-up'] = test_suggest
-            self.assertEqual(h1.suggest('made-up'), test_suggest)
+            self.assertEqual(h1._suggest('made-up'), test_suggest)
             h1._stem_cache['made-up'] = test_stem
             self.assertEqual(h1.stem('made-up'), test_stem)
 
@@ -259,17 +259,17 @@ class HunspellTest(unittest.TestCase):
 
             self.assertEqual(len(h2._suggest_cache), 0)
             self.assertEqual(len(h2._stem_cache), 0)
-            self.assertNotEqual(h2.suggest('made-up'), test_suggest)
+            self.assertNotEqual(h2._suggest('made-up'), test_suggest)
             self.assertNotEqual(h2.stem('made-up'), test_stem)
         finally:
             shutil.rmtree(temp_dir) # Nuke temp content
 
     def test_clear_caches_non_peristance(self):
-        test_suggest = self.h.suggest('testing')
+        test_suggest = self.h._suggest('testing')
         test_stem = self.h.stem('testing')
 
         self.h._suggest_cache['made-up'] = test_suggest
-        self.assertEqual(self.h.suggest('made-up'), test_suggest)
+        self.assertEqual(self.h._suggest('made-up'), test_suggest)
         self.h._stem_cache['made-up'] = test_stem
         self.assertEqual(self.h.stem('made-up'), test_stem)
 
@@ -277,7 +277,7 @@ class HunspellTest(unittest.TestCase):
 
         del self.h
         self.h = Hunspell('test', hunspell_data_dir=DICT_DIR)
-        self.assertNotEqual(self.h.suggest('made-up'), test_suggest)
+        self.assertNotEqual(self.h._suggest('made-up'), test_suggest)
         self.assertNotEqual(self.h.stem('made-up'), test_stem)
 
 if __name__ == '__main__':
